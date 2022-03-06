@@ -1,0 +1,23 @@
+Profili analizzati: 85
+Tempo utilizzato: 04:27:43
+Media: 03m 09s per ogni persona inserita
+Di questo tempo circa il 25% è necessario per l'inserimento dei dati (ibrido automatico/manuale)
+e il restante 75% per attendere il download delle varie immagini dai social (automatico).
+
+Report:
+
+Se si aggiungono profili troppo velocemente dopo circa 10 - 15 profili aggiunti si presenterà l'errore:
+Too many queries in the last time. Need to wait 407 seconds.
+
+Negli 85 profili analizzati è stato riscontrato 3 volte un problema nel trovare il profilo Instagram mandando in errore.
+
+Se esistono, i profili Facebook e Instagram vengono quasi sicuramente trovati (~99%).
+
+La pagina di Idolwiki corrispondente alla celebrità analizzata viene trovata all'incirca tra il 60% e il 70%,
+se viene trovata c'è un alta probabilità (~80%) che vengano trovate: date of birth, ethnicity, interests, sexual orientation.
+
+Alta probabilità (~70%) che venga rilevato il gender corretto, questa percentuale viene abbassata dalle voci nel file json che contengono nomi sbagliati o troppo complicati.
+
+Lo script che trova la current city non ha funzionato in nessuno degli 85 inserimenti effettuati.
+
+Trovato il profilo Facebook o Twitter, il download delle immagini profilo ha sempre funzionato.
