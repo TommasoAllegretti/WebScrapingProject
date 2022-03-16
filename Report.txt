@@ -21,3 +21,6 @@ Alta probabilità (~70%) che venga rilevato il gender corretto, questa percentua
 Lo script che trova la current city non ha funzionato in nessuno degli 85 inserimenti effettuati.
 
 Trovato il profilo Facebook o Twitter, il download delle immagini profilo ha sempre funzionato.
+
+
+celeb attuale: riteish deshmukh

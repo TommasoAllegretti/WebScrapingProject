@@ -13,16 +13,16 @@ from googlesearch import search
 import os
 import re
 
-flag = True
 
-if flag == True:
-    #specifying chromedriver's path
-    chromedriver_path = 'chromedriver.exe'
-    #adding "headless" option to not show the window and the "log-level=3" option to not print selenium warnings 
-    chrome_options = Options()
-    #chrome_options.add_argument("--headless")
-    chrome_options.add_argument('--log-level=3')
-    webdriver = webdriver.Chrome(executable_path=chromedriver_path, options=chrome_options)
+#specifying chromedriver's path
+chromedriver_path = 'chromedriver.exe'
+#adding "headless" option to not show the window and the "log-level=3" option to not print selenium warnings 
+chrome_options = Options()
+#chrome_options.add_argument("--headless")
+chrome_options.add_argument('--log-level=3')
+webdriver = webdriver.Chrome(executable_path=chromedriver_path, options=chrome_options)
+
+months = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
         
 
 
@@ -141,9 +141,6 @@ def IGscrape(igName, IL):
             break
 
 def IWscrape(iw):
-
-    months = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER']
-
     try:
         webdriver.get(iw)
     except UnboundLocalError:
@@ -157,7 +154,7 @@ def IWscrape(iw):
         pass
 
     #find date of birth
-    try:
+    try:        #CAN BE OPTIMIZED !!!
         dobStr = webdriver.find_element(By.XPATH, '//*[@id="movie-left"]/div[3]/div[5]/div')
         dayFlag = False
         yearFlag = False
@@ -169,8 +166,8 @@ def IWscrape(iw):
                 dobDay = word.replace(',', '')
                 dayFlag = False
                 yearFlag = True
-            if word in months:
-                dobMonth = str(months.index(word) + 1)
+            if word in months.upper():
+                dobMonth = str(months.upper().index(word) + 1)
                 dayFlag = True
         
         if len(dobDay) < 2:
@@ -225,28 +222,7 @@ def IWscrape(iw):
         pass
     
     return dob, ethn, sex, intStr
-
-#find wikipedia page to search for the current city 
-def WPscrape(wp):
-    webdriver.get(wp)
-    timeout = 5
-    try:
-        element_present = EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Billed from')]"))
-        WebDriverWait(webdriver, timeout).until(element_present)
-    except TimeoutException:
-        pass
-
-    try:
-        bill = webdriver.find_element(By.XPATH, "//*[contains(text(), 'Billed from')]")
-        locStr = bill.find_element(By.XPATH, '..').text
-        locStr = re.sub('[[].*[]]', '', locStr).replace('Billed from ', '').replace(',', ' -').replace('\n', ' - ')
-    except (NoSuchElementException,IndexError) as e:
-        pass
     
-    return locStr
-
-
-
 #edits the celebrity first name in order to be analyzed by gender_guesser
 #this is because the module requires for names to be in this specific format
 def cleanGString(name):
@@ -262,10 +238,78 @@ def getGender(name):
         gend = 'M'
     elif gend == 'mostly_female' or gend == 'female':
         gend = 'F'
-    elif gend == 'andy':
-        gend = ''
     
     return gend
+
+
+#find wikipedia page to search for the current city 
+def WPscrape(wp):
+    spGend = ''
+    webdriver.get(wp)
+    timeout = 5
+    try:
+        element_present = EC.presence_of_element_located((By.XPATH, '//*[@id="mw-content-text"]/div[1]/table[1]/tbody/tr[3]'))
+        WebDriverWait(webdriver, timeout).until(element_present)
+    except TimeoutException:
+        pass
+
+    #find date of birth
+    try:
+        wikiDob = webdriver.find_element(By.XPATH, '//*[@id="mw-content-text"]/div[1]/table[1]/tbody/tr[contains(., "Born")]')
+        strings = wikiDob.text.split()
+
+        for string in strings:
+            if string.isdecimal and len(string) < 3:
+                dobDay = string.replace(',', '')
+            elif string.lower() in months:
+                dobMonth = str(months.index(string.lower()) + 1)
+            elif string.isdecimal() and len(string) == 4:
+                dobYear = string
+                
+        if len(dobDay) < 2:
+            dobDay = '0' + dobDay
+        if len(dobMonth) < 2:
+            dobMonth = '0' + dobMonth
+
+        dob = dobDay + '/' + dobMonth + '/' + dobYear
+        dob = dob.replace(' ', '')
+
+    except (NoSuchElementException,IndexError) as e:
+        pass
+
+    try:
+        wikiSpouse = webdriver.find_element(By.XPATH, '//*[@id="mw-content-text"]/div[1]/table[1]/tbody/tr[contains(., "Spouse(s)")]').text
+        wikiSpouse = wikiSpouse.replace('Spouse(s)', '').split()
+        delFlag = False
+        spNames = []
+        i = 0
+        spNames.append('')
+        for sp in wikiSpouse:
+            if sp.startswith('('):
+                delFlag = True
+            if not delFlag:
+                spNames[i] = spNames[i] + ' ' + sp
+            if sp.endswith(')'):
+                delFlag = False
+                spNames.append('')
+                i += 1
+        
+        for x in spNames:
+            tmp = getGender(x.split()[0].replace(' ', ''))
+            if x != '':
+                try:
+                    if spGend != tmp:
+                        spGend = 'bi'
+                except UnboundLocalError:
+                    spGend = tmp
+
+    except (NoSuchElementException,IndexError) as e:
+        pass
+
+    return spGend, dob
+
+
+
 
 def downloadSocials(igLink, IL, fbLink, twLink, name):
     if igLink.startswith('https://www.instagram.com/'):
@@ -284,3 +328,6 @@ def downloadSocials(igLink, IL, fbLink, twLink, name):
         TWscrape(twLink, igName, name)
     else:
         print('\nTwitter URL not valid')
+
+
+#WPscrape('https://en.wikipedia.org/wiki/Dwayne_Johnson')
