@@ -8,6 +8,7 @@ from IPython.display import clear_output
 from googlesearch import search
 from script import *
 
+#calculate age based on date of birth
 def calculate_age(born):
     day = born.split("/")[0]
     month = born.split("/")[1]
@@ -65,8 +66,9 @@ for c in celeb:
         query3 = name + ' idolwiki'
         query4 = name + ' wikipedia'
         
-        
+        #suggest gender based on first name
         gd = getGender(name)
+        #asks for confirmation if name is not in database (e.g. the name is a brand)
         if gd == 'unknown' or gd == 'andy':
             x = input('\nThis name is not in the database\nIs this a real person? [Y]/n ')
             if x == 'n' or x == 'N':
@@ -100,43 +102,52 @@ for c in celeb:
                 gend = gd
                 break
         
+        #if the celerity being analyzed is not a male the program skips to the next iteration
         if gend == 'M':
+
+            #start query to find Idolwiki page
             for i in search(query3, tld="com", num=1, stop=1, pause=2):
                 iw = i
             try:
+                #scrapes date of birth, ethnicity, sexual orientation, interests from Idolwiki
                 if iw.startswith('https://idolwiki.com/'):
                     iwDob, ethn, sexStr, intStr = IWscrape(iw)
             except NameError:
                 pass
         
+            #shows suggestion for Facebook profile
             if fb != '':
                 print('\nSuggestion: ' + fb + ' - Press enter to confirm')
             print("Facebook?")
             webdriver.get(fb)
 
-
             face = input()
             if face != "":
                 fb = face
 
+            #shows sugestion for Twitter profile
             if tw != '':
                 print('\nSuggestion: ' + tw + ' - Press enter to confirm')
             print("Twitter?")
             webdriver.get(tw)
             
+            #start query to find english Wikipedia page
             for i in search(query4, tld="com", lang='en', num=1, stop=1, pause=2):
                 wp = i
             print(wp)
-            
 
             twitt = input()
             if twitt!= "":
                 tw = twitt 
 
-            
-            if wp.startswith('https://en.wikipedia.org/wiki/'):
-                spouseGend, wpDob = WPscrape(wp)
+            try:
+                #scrapes spouse gender, date of birth from Wikipedia
+                if wp.startswith('https://en.wikipedia.org/wiki/'):
+                    spouseGend, wpDob = WPscrape(wp)
+            except NameError:
+                pass
 
+            #determines sexual orientation based on gender and spouse(s) gender
             if spouseGend == 'bi':
                 wikiSex = 'Bisexual'
             elif gend == spouseGend:
@@ -144,17 +155,21 @@ for c in celeb:
             elif gend != spouseGend and spouseGend != 'bi':
                 wikiSex = 'Heterosexual'
             
-            
+            #shows google results to help in case of manual input for date of birth
             webdriver.get('https://www.google.com/search?q=' + name.replace(' ', '+') + '+age')
             #formato dd/mm/yyy
             try:
+                #date of birth was found on Idolwiki AND Wikipedia
                 if iwDob != '' and wpDob != '':
+                    #they are the same
                     if iwDob == wpDob:
                         print('\nSuggestion: ' + iwDob + ' - Press enter to confirm')
                         print('Or enter date of birth manually DD/MM/YYYY\n')
                         bdate = input()
                         if bdate == '':
                             bdate = iwDob
+
+                    #theres a conflict between the data found
                     else:
                         print('Wikipedia suggestion: ' + wpDob + '\nPress 1 to confirm\n')
                         print('Idolwiki suggestion: ' + iwDob + '\nPress 2 to confirm\n')
@@ -164,27 +179,30 @@ for c in celeb:
                             bdate = wpDob
                         elif bdate == '2':
                             bdate = iwDob
-                        
+
+                #only Idolwiki's date of birth was found
                 elif iwDob != '' and wpDob == '':
                     print('Suggestion: ' + iwDob + '\nPress enter to confirm')
                     print('Or enter date of birth manually DD/MM/YYYY\n')
                     bdate = input()
                     if bdate == '':
                         bdate = iwDob
-                
+
+                #only Idolwiki's date of birth was found
                 elif wpDob != '' and iwDob == '':
                     print('Suggestion: ' + wpDob + '\nPress enter to confirm')
                     print('Or enter date of birth manually DD/MM/YYYY\n')
                     bdate = input()
                     if bdate == '':
                         bdate = wpDob
-
+                #no date of birth was found automatically
                 else:
                     bdate = input("Birthdate?")
                     
             except NameError:
                 bdate = input("Birthdate?")
                 pass
+            
             age = calculate_age(bdate)
 
 
