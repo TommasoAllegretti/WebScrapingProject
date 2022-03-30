@@ -154,7 +154,7 @@ def IWscrape(iw):
         pass
 
     #find date of birth
-    try:        #CAN BE OPTIMIZED !!!
+    try:
         dobStr = webdriver.find_element(By.XPATH, '//*[@id="movie-left"]/div[3]/div[5]/div')
         dayFlag = False
         yearFlag = False
@@ -166,8 +166,8 @@ def IWscrape(iw):
                 dobDay = word.replace(',', '')
                 dayFlag = False
                 yearFlag = True
-            if word in months.upper():
-                dobMonth = str(months.upper().index(word) + 1)
+            if word.lower() in months:
+                dobMonth = str(months.index(word.lower()) + 1)
                 dayFlag = True
         
         if len(dobDay) < 2:
@@ -176,6 +176,7 @@ def IWscrape(iw):
             dobMonth = '0' + dobMonth
 
         dob = dobDay + '/' + dobMonth + '/' + dobYear
+
 
 
     except (NoSuchElementException,IndexError) as e:
@@ -192,6 +193,7 @@ def IWscrape(iw):
         pass
 
     #find sexual orientation
+    sex = ''
     try:
         sexStr = webdriver.find_element(By.XPATH, '//*[@id="movie-right"]/div[7]/div/p[1]').text
         if 'SEXUAL ORIENTATION' in sexStr.upper():
@@ -220,7 +222,7 @@ def IWscrape(iw):
 
     except (NoSuchElementException,IndexError) as e:
         pass
-    
+
     return dob, ethn, sex, intStr
     
 #edits the celebrity first name in order to be analyzed by gender_guesser
@@ -248,24 +250,34 @@ def WPscrape(wp):
     webdriver.get(wp)
     timeout = 5
     try:
-        element_present = EC.presence_of_element_located((By.XPATH, '//*[@id="mw-content-text"]/div[1]/table[1]/tbody/tr[3]'))
+        element_present = EC.presence_of_element_located((By.XPATH, '//*[@id="mw-content-text"]/div[1]/table[1]/tbody'))
         WebDriverWait(webdriver, timeout).until(element_present)
     except TimeoutException:
         pass
 
     #find date of birth
     try:
-        wikiDob = webdriver.find_element(By.XPATH, '//*[@id="mw-content-text"]/div[1]/table[1]/tbody/tr[contains(., "Born")]')
-        strings = wikiDob.text.split()
+        wikiDob = webdriver.find_element(By.XPATH, '//*[@id="mw-content-text"]/div[1]/table[contains(., "Born")]/tbody/tr[contains(., "Born")]')
+    except NoSuchElementException:
+        try:
+            wikiDob = webdriver.find_element(By.XPATH, '//*[@id="mw-content-text"]/div[1]/table[contains(., "Date of birth")]/tbody/tr[contains(., "Date of birth")]')
+        except NoSuchElementException:
+            pass
+        pass
+        
+    strings = wikiDob.text.split()
 
-        for string in strings:
-            if string.isdecimal and len(string) < 3:
-                dobDay = string.replace(',', '')
-            elif string.lower() in months:
-                dobMonth = str(months.index(string.lower()) + 1)
-            elif string.isdecimal() and len(string) == 4:
-                dobYear = string
-                
+    for string in strings:
+        if len(string) < 4:
+            tmpDay = string.replace(',', '')
+            if tmpDay.isdecimal():
+                dobDay = tmpDay
+        elif string.lower() in months:
+            dobMonth = str(months.index(string.lower()) + 1)
+        elif string.isdecimal() and len(string) == 4:
+            dobYear = string
+
+    try:
         if len(dobDay) < 2:
             dobDay = '0' + dobDay
         if len(dobMonth) < 2:
@@ -274,7 +286,8 @@ def WPscrape(wp):
         dob = dobDay + '/' + dobMonth + '/' + dobYear
         dob = dob.replace(' ', '')
 
-    except (NoSuchElementException,IndexError) as e:
+    
+    except UnboundLocalError:
         pass
 
     try:
@@ -295,13 +308,13 @@ def WPscrape(wp):
                 i += 1
         
         for x in spNames:
-            tmp = getGender(x.split()[0].replace(' ', ''))
             if x != '':
-                try:
-                    if spGend != tmp:
-                        spGend = 'bi'
-                except UnboundLocalError:
+                tmp = getGender(x.split()[0].replace(' ', ''))
+                if spGend == '':
                     spGend = tmp
+                elif spGend != tmp:
+                    spGend = 'bi'
+                    
 
     except (NoSuchElementException,IndexError) as e:
         pass
@@ -330,4 +343,4 @@ def downloadSocials(igLink, IL, fbLink, twLink, name):
         print('\nTwitter URL not valid')
 
 
-#WPscrape('https://en.wikipedia.org/wiki/Dwayne_Johnson')
+#WPscrape('https://en.wikipedia.org/wiki/Pakorn_Chatborirak')

@@ -31,7 +31,8 @@ for c in celeb:
         ready_to_start = True
         continue
     
-    #reset variables
+    #reset variables to avoid raising a NameError exception on first iteration or
+    #using the wrong value in the next iterations
     wp = '' 
     iw = '' 
     fb = '' 
@@ -55,6 +56,7 @@ for c in celeb:
     else: #analyze the guy
         print('Name?')
 
+        #asks for name
         temp_name = input()
         if temp_name == "":
             name = c
@@ -66,7 +68,7 @@ for c in celeb:
         query3 = name + ' idolwiki'
         query4 = name + ' wikipedia'
         
-        #suggest gender based on first name
+        #predicts gender based on first name
         gd = getGender(name)
         #asks for confirmation if name is not in database (e.g. the name is a brand)
         if gd == 'unknown' or gd == 'andy':
@@ -90,6 +92,7 @@ for c in celeb:
         for k in search(query2, tld="com", num=1, stop=1, pause=2):
             tw = k.split("?")[0]
 
+        #asks for gender
         while True:
             g = input() 
             if g == 'm' or g =='M':
@@ -108,12 +111,15 @@ for c in celeb:
             #start query to find Idolwiki page
             for i in search(query3, tld="com", num=1, stop=1, pause=2):
                 iw = i
+
+
+            #scrapes date of birth, ethnicity, sexual orientation, interests from Idolwiki
             try:
-                #scrapes date of birth, ethnicity, sexual orientation, interests from Idolwiki
                 if iw.startswith('https://idolwiki.com/'):
                     iwDob, ethn, sexStr, intStr = IWscrape(iw)
             except NameError:
                 pass
+            
         
             #shows suggestion for Facebook profile
             if fb != '':
@@ -121,11 +127,12 @@ for c in celeb:
             print("Facebook?")
             webdriver.get(fb)
 
+            #asks for Facebook profile link
             face = input()
             if face != "":
                 fb = face
 
-            #shows sugestion for Twitter profile
+            #shows suggestion for Twitter profile
             if tw != '':
                 print('\nSuggestion: ' + tw + ' - Press enter to confirm')
             print("Twitter?")
@@ -134,26 +141,28 @@ for c in celeb:
             #start query to find english Wikipedia page
             for i in search(query4, tld="com", lang='en', num=1, stop=1, pause=2):
                 wp = i
-            print(wp)
 
+            #asks for Twitter profile link
             twitt = input()
             if twitt!= "":
                 tw = twitt 
 
+
+            #scrapes spouse gender, date of birth from Wikipedia
             try:
-                #scrapes spouse gender, date of birth from Wikipedia
                 if wp.startswith('https://en.wikipedia.org/wiki/'):
                     spouseGend, wpDob = WPscrape(wp)
             except NameError:
                 pass
 
             #determines sexual orientation based on gender and spouse(s) gender
-            if spouseGend == 'bi':
-                wikiSex = 'Bisexual'
-            elif gend == spouseGend:
-                wikiSex = 'Homosexual'
-            elif gend != spouseGend and spouseGend != 'bi':
-                wikiSex = 'Heterosexual'
+            if spouseGend in ['male', 'female', 'bi']:
+                if spouseGend == 'bi':
+                    wikiSex = 'Bisexual'
+                elif gend == spouseGend:
+                    wikiSex = 'Homosexual'
+                elif gend != spouseGend and spouseGend != 'bi':
+                    wikiSex = 'Heterosexual'
             
             #shows google results to help in case of manual input for date of birth
             webdriver.get('https://www.google.com/search?q=' + name.replace(' ', '+') + '+age')
@@ -188,7 +197,7 @@ for c in celeb:
                     if bdate == '':
                         bdate = iwDob
 
-                #only Idolwiki's date of birth was found
+                #only Wikipedia's date of birth was found
                 elif wpDob != '' and iwDob == '':
                     print('Suggestion: ' + wpDob + '\nPress enter to confirm')
                     print('Or enter date of birth manually DD/MM/YYYY\n')
@@ -205,15 +214,15 @@ for c in celeb:
             
             age = calculate_age(bdate)
 
-
+            #shows ethnicity's suggestion
             try:
                 if ethn != '':
                     print('\nSuggestion: ' + ethn)
             except NameError:
                 pass
-
+            
+            #asks for ethnicity
             print("Ethnicity? c/af/i/as")
-                
             ethnicity = input()
 
             while True:
@@ -230,9 +239,11 @@ for c in celeb:
                     ethnicity = "Asian"
                     break
                 
+            #shows interests' suggestion(s)
             try:
                 if intStr != '':
                     print('\nSuggestions: ' + intStr + ' - Press enter to confirm')
+                #asks for interests
                 interest = input("Interest?")
                 if interest == '':
                     interest = intStr
@@ -240,15 +251,23 @@ for c in celeb:
                 interest = input("Interest?")
                 pass
 
-            
+            #shows sexual orientation suggestion(s)
             try:
+                #only Idolwiki's suggestion was found
                 if sexStr != '' and wikiSex == '':
-                    print('\nSuggestion: ' + sexStr + ' - Press enter to confirm')
+                    print('\nSuggestion: ' + sexStr + ' (Idolwiki) - Press enter to confirm')
+                #only Wikipedia's suggestion was found
                 elif wikiSex != '' and sexStr == '':
-                    print('\nSuggestion: ' + wikiSex + ' - Press enter to confirm')
+                    print('\nSuggestion: ' + wikiSex + ' (Wikipedia) - Press enter to confirm')
+                #both Idolwiki's and Wikipedia's suggestions were found
                 elif wikiSex != '' and sexStr != '':
-                    print('\nIdolwiki suggestion: ' + sexStr + ' - Press 1 to confirm')
-                    print('\nWikipedia suggestion: ' + wikiSex + ' - Press 2 to confirm')
+                    #they are equal
+                    if wikiSex == sexStr:
+                        print('Suggestion: ' + wikiSex + ' - Press enter to confirm')
+                    #they are conflicting
+                    else: 
+                        print('\nIdolwiki suggestion: ' + sexStr + ' - Press 1 to confirm')
+                        print('\nWikipedia suggestion: ' + wikiSex + ' - Press 2 to confirm')
                 
                 while True:
                     sex = input("Sexual? H/O/B")
@@ -261,17 +280,24 @@ for c in celeb:
                     elif sex == "B" or sex == "b":
                         sex ="Bisexual"
                         break
-                    elif sex == '' and sexStr != '' and wikiSex == '':
+
+                    elif sexStr != '' and wikiSex == '' and sex == '':
                         sex = sexStr
                         break
-                    elif sex == '' and wikiSex != '' and sexStr == '':
+                    elif wikiSex != '' and sexStr == '' and sex == '':
                         sex = wikiSex
                         break
-                    elif wikiSex != '' and sexStr != '':
-                        if sex == '1':
-                            sex = sexStr
-                        elif sex == '2':
+                    elif wikiSex != '' and sexStr != '' and sex in ['1', '2', '']:
+                        if wikiSex == sexStr and sex == '':
                             sex = wikiSex
+                            break
+                        else:
+                            if sex == '1':
+                                sex = sexStr
+                                break
+                            elif sex == '2':
+                                sex = wikiSex
+                                break
 
             except NameError:
                 while True:
@@ -286,6 +312,7 @@ for c in celeb:
                         sex ="Bisexual"
                         break
 
+            #shows search result to help in case of manual input for current city
             webdriver.get('https://www.google.com/search?q=where+does+' + name.replace(' ', '+') + '+live')        
 
             print("City?")      
